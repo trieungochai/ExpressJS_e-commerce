@@ -1,7 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/User.model");
 const { UnauthenticatedError, BadRequestError } = require("../errors");
-const { createJWT } = require("../utils");
+const { attachCookiesToResponse } = require("../utils");
 
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
@@ -26,9 +26,10 @@ const registerUser = async (req, res) => {
     userName: newUser.name,
     userRole: newUser.role,
   };
-  const token = await createJWT({ payload: tokenPayload });
 
-  return res.status(StatusCodes.CREATED).json({ newUser, token });
+  attachCookiesToResponse({ res, tokenPayload });
+  
+  return res.status(StatusCodes.CREATED).json({ tokenPayload });
 };
 
 const loginUser = async (req, res) => {};
