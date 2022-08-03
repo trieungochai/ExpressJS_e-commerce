@@ -1,7 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/User.model");
 const { UnauthenticatedError, BadRequestError } = require("../errors");
-const { createJWT } = require("../utils");
+const { attachCookiesToResponse } = require("../utils");
 
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
@@ -26,13 +26,46 @@ const registerUser = async (req, res) => {
     userName: newUser.name,
     userRole: newUser.role,
   };
-  const token = await createJWT({ payload: tokenPayload });
 
-  return res.status(StatusCodes.CREATED).json({ newUser, token });
+  attachCookiesToResponse({ res, tokenPayload });
+
+  return res.status(StatusCodes.CREATED).json({ tokenPayload });
 };
 
-const loginUser = async (req, res) => {};
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new BadRequestError("Please enter your email and password");
+  }
+  const loggedInUser = await User.findOne({ email });
+  if (!loggedInUser) {
+    throw new UnauthenticatedError("Invalid Credentials");
+  }
 
-const logoutUser = async (req, res) => {};
+  // compare password
+  const isPasswordCorrect = await loggedInUser.comparePassword(password);
+  if (!isPasswordCorrect) {
+    throw new UnauthenticatedError("Invalid Credentials");
+  }
+
+  const tokenPayload = {
+    userId: loggedInUser._id,
+    userName: loggedInUser.name,
+    userRole: loggedInUser.role,
+  };
+
+  attachCookiesToResponse({ res, tokenPayload });
+
+  return res.status(StatusCodes.OK).json({ tokenPayload });
+};
+
+const logoutUser = async (req, res) => {
+  res.cookie("token", "logout", {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  });
+
+  return res.status(StatusCodes.OK).json({ msg: "User logged out" });
+};
 
 module.exports = { registerUser, loginUser, logoutUser };

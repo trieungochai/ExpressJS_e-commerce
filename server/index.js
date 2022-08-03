@@ -7,6 +7,7 @@ const app = express();
 
 // rest of packages
 const morgan = require("morgan");
+const cookieParser = require("cookie-parser");
 
 // database
 const connectDB = require("./db/connect");
@@ -20,6 +21,15 @@ const notFoundMiddleware = require("./middleware/not-found.middleware");
 
 app.use(morgan("tiny"));
 app.use(express.json());
+app.use(cookieParser(process.env.JWT_SECRET));
+
+app.get("/", (req, res) => {
+  return res.send("See you Space Cowboy");
+});
+app.get("/api/v1", (req, res) => {
+  console.log(req.cookies);
+  return res.send("See you Space Cowboy");
+});
 
 app.use("/api/v1/auth", authRouter);
 
