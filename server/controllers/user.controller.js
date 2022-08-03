@@ -1,13 +1,24 @@
 const User = require("../models/User.model");
 const { StatusCodes } = require("http-status-codes");
-const { UnauthenticatedError, BadRequestError } = require("../errors");
+const {
+  UnauthenticatedError,
+  BadRequestError,
+  NotFoundError,
+} = require("../errors");
 
 const gelAllUsers = async (req, res) => {
-  return res.send("gelAllUser");
+  const users = await User.find({ role: "user" }).select("-password");
+  return res.status(StatusCodes.OK).json({ users });
 };
 
 const getSingleUser = async (req, res) => {
-  return res.send("getSingleUser");
+  const { id } = req.params;
+  const user = await User.findOne({ _id: id }).select("-password");
+  if (!user) {
+    throw new NotFoundError(`No user with id: ${id}`);
+  }
+
+  return res.status(StatusCodes.OK).json({ user });
 };
 
 const showCurrentUser = async (req, res) => {
